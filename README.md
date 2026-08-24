@@ -59,16 +59,16 @@ https://silverjean0813.github.io/binteum-poc/
 
 카페와 데이터 상태를 선택하여 혼잡도를 조회하고 응답 시간을 확인할 수 있습니다.
 
-![혼잡도 조회 화면](poc-result.jeng)
+![혼잡도 조회 화면](poc-result.jpeg)
 
 ### 6-2. 혼잡도 제보 및 중복 제보 방지
 
 사용자가 혼잡도를 제보하고, 동일 카페에 10분 이내 다시 제보할 경우 중복 제보로 안내합니다.
 
-![중복 제보 화면](poc-duplicate.png)
+![중복 제보 화면](poc-duplicate.jpeg)
 
 ### 6-3. 품질 기준 확인
 
 중복 제한 시간, 최소 제보 건수, 혼잡도 유효 시간, 조회 응답 기준을 화면에서 확인할 수 있습니다.
 
-![품질 기준 화면](poc-quality.png)
+![품질 기준 화면](poc-quality.jpeg)
