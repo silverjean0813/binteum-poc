@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>빈틈 - 품질 확인 PoC</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7f9;
+      color: #202124;
+    }
+    .container {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+    }
+    h1 { margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-top: 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e2e5e9;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .wide { grid-column: 1 / -1; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; }
+    select, button {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 9px;
+      border: 1px solid #d1d5db;
+      background: white;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      background: #202124;
+      color: white;
+      border: none;
+      margin-top: 12px;
+    }
+    button.secondary { background: #eef0f3; color: #202124; }
+    .status {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #f3f4f6;
+      line-height: 1.6;
+    }
+    .status.success { background: #ecfdf3; }
+    .status.warning { background: #fff8e6; }
+    .status.error { background: #fef2f2; }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+    }
+    .metric:last-child { border-bottom: 0; }
+    .badge {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #eef0f3;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .help { color: #5f6368; font-size: 13px; }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>빈틈 품질 확인 PoC</h1>
+    <p class="subtitle">혼잡도 제보 저장과 품질 기준을 직접 확인하는 간단한 프로토타입</p>
+
+    <section class="grid">
+      <div class="card">
+        <h2>카페 혼잡도 조회</h2>
+
+        <label for="cafe">카페</label>
+        <select id="cafe">
+          <option value="cafe1">카페 A</option>
+          <option value="cafe2">카페 B</option>
+        </select>
+
+        <label for="dataState">데이터 상태</label>
+        <select id="dataState">
+          <option value="normal">정상 데이터 (3건 이상)</option>
+          <option value="insufficient">정보 부족 (2건 이하)</option>
+          <option value="error">서버 오류</option>
+        </select>
+
+        <button id="loadBtn">혼잡도 조회</button>
+
+        <div id="result" class="status">
+          조회 버튼을 눌러 결과를 확인하세요.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>응답 시간</h2>
+        <div class="metric">
+          <span>기준</span>
+          <strong>3초 이내</strong>
+        </div>
+        <div class="metric">
+          <span>측정값</span>
+          <strong id="responseTime">-</strong>
+        </div>
+        <div class="metric">
+          <span>판정</span>
+          <strong id="performanceResult">-</strong>
+        </div>
+        <p class="help">PoC에서는 조회 요청을 시뮬레이션하여 처리 시간을 화면에 표시합니다.</p>
+      </div>
+
+      <div class="card wide">
+        <h2>혼잡도 제보</h2>
+
+        <label for="user">사용자</label>
+        <select id="user">
+          <option value="user1">사용자 A (로그인)</option>
+          <option value="user2">사용자 B (로그인)</option>
+          <option value="">비로그인 사용자</option>
+        </select>
+
+        <label for="reportCafe">카페</label>
+        <select id="reportCafe">
+          <option value="cafe1">카페 A</option>
+          <option value="cafe2">카페 B</option>
+        </select>
+
+        <label for="congestion">혼잡도</label>
+        <select id="congestion">
+          <option value="여유">여유</option>
+          <option value="보통">보통</option>
+          <option value="혼잡">혼잡</option>
+        </select>
+
+        <button id="reportBtn">제보 저장</button>
+        <button id="resetBtn" class="secondary">저장 데이터 초기화</button>
+
+        <div id="reportResult" class="status">
+          현재 저장된 제보: <strong id="reportCount">0</strong>건
+        </div>
+      </div>
+
+      <div class="card wide">
+        <h2>품질 기준 확인</h2>
+        <div class="metric">
+          <span>중복 제한 시간</span>
+          <span class="badge">10분</span>
+        </div>
+        <div class="metric">
+          <span>혼잡도 최소 제보</span>
+          <span class="badge">3건</span>
+        </div>
+        <div class="metric">
+          <span>혼잡도 유효 시간</span>
+          <span class="badge">최근 15분</span>
+        </div>
+        <div class="metric">
+          <span>조회 응답 기준</span>
+          <span class="badge">3초 이내</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const DUPLICATE_WINDOW_MINUTES = 10;
+  const MIN_REPORTS = 3;
+  const RESPONSE_LIMIT_MS = 3000;
+
+  let reports = [];
+
+  const result = document.getElementById("result");
+  const responseTime = document.getElementById("responseTime");
+  const performanceResult = document.getElementById("performanceResult");
+  const reportResult = document.getElementById("reportResult");
+  const reportCount = document.getElementById("reportCount");
+
+  function updateCount() {
+    reportCount.textContent = reports.length;
+  }
+
+  function getMinutesDifference(previousTime, currentTime) {
+    return (currentTime - previousTime) / (1000 * 60);
+  }
+
+  function isDuplicateReport(newReport, now) {
+    return reports.some(report => {
+      const minutes = getMinutesDifference(
+        new Date(report.createdAt),
+        now
+      );
+
+      return report.userId === newReport.userId &&
+             report.cafeId === newReport.cafeId &&
+             minutes >= 0 &&
+             minutes <= DUPLICATE_WINDOW_MINUTES;
+    });
+  }
+
+  document.getElementById("loadBtn").addEventListener("click", () => {
+    const startedAt = performance.now();
+    const state = document.getElementById("dataState").value;
+
+    // PoC에서 조회 요청을 시뮬레이션
+    const simulatedDelay = state === "error" ? 450 : 650;
+
+    setTimeout(() => {
+      const elapsed = Math.round(performance.now() - startedAt);
+      responseTime.textContent = `${elapsed}ms`;
+
+      const passed = elapsed <= RESPONSE_LIMIT_MS;
+      performanceResult.textContent = passed ? "통과" : "초과";
+
+      if (state === "error") {
+        result.className = "status error";
+        result.innerHTML = "<strong>오류가 발생했습니다.</strong><br>현재 혼잡도 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.";
+        return;
+      }
+
+      if (state === "insufficient") {
+        result.className = "status warning";
+        result.innerHTML = `<strong>정보 부족</strong><br>유효한 제보가 ${MIN_REPORTS}건 미만이므로 혼잡도를 확정하지 않습니다.`;
+        return;
+      }
+
+      result.className = "status success";
+      result.innerHTML = "<strong>혼잡도: 보통</strong><br>최근 제보 데이터를 기준으로 혼잡도를 표시했습니다.";
+    }, simulatedDelay);
+  });
+
+  document.getElementById("reportBtn").addEventListener("click", () => {
+    const userId = document.getElementById("user").value;
+    const cafeId = document.getElementById("reportCafe").value;
+    const congestion = document.getElementById("congestion").value;
+    const now = new Date();
+
+    if (!userId) {
+      reportResult.className = "status error";
+      reportResult.innerHTML = "<strong>제보할 수 없습니다.</strong><br>로그인한 사용자만 제보할 수 있습니다.";
+      return;
+    }
+
+    const newReport = { userId, cafeId, congestion, createdAt: now.toISOString() };
+
+    if (isDuplicateReport(newReport, now)) {
+      reportResult.className = "status warning";
+      reportResult.innerHTML = `<strong>중복 제보입니다.</strong><br>동일 카페에는 ${DUPLICATE_WINDOW_MINUTES}분 이내 다시 제보할 수 없습니다.<br>현재 저장된 제보: <strong>${reports.length}</strong>건`;
+      return;
+    }
+
+    reports.push(newReport);
+    updateCount();
+
+    reportResult.className = "status success";
+    reportResult.innerHTML = `<strong>제보가 저장되었습니다.</strong><br>혼잡도: ${congestion}<br>현재 저장된 제보: <strong>${reports.length}</strong>건`;
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    reports = [];
+    updateCount();
+    reportResult.className = "status";
+    reportResult.innerHTML = '현재 저장된 제보: <strong id="reportCount">0</strong>건';
+  });
+</script>
+</body>
+</html>
